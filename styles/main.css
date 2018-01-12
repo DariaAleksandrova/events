@@ -5,11 +5,10 @@ html, body {
   height: 200vh;
 }
 
-#myInput {
+.myInput {
   box-sizing: border-box;
   font-size: 16px;
   padding: 14px 30px 12px 15px;
-  border: none;
   width: 100%;
   position: relative;
   border: 1px solid rgba(0,0,0,0.2);
@@ -33,7 +32,6 @@ html, body {
 }
 
 .dropdown {
-  position: relative;
   display: inline-block;
   position: absolute;
   bottom: 20%;
@@ -64,8 +62,7 @@ html, body {
   background-color: #ddd
 }
 
-
-#dropdownList {
+.dropdownList {
   /*display: none;*/
   position: absolute;
   left: -99999px;
@@ -77,31 +74,27 @@ html, body {
   border: 1px solid rgba(0,0,0,0.2);
 }
 
-#dropdownList.show,
-.show {
+.dropdownList.showed,
+.showed {
   position: relative;
   left: 0;
   opacity: 1;
 }
 
-#dropdownList.openTop {
+.dropdownList.openedTop {
   position: absolute;
-  height: 210px;
   bottom: 44px;
 }
 
-table tr {
-	color: green;
-	font-size: 25px;
+.container, .container2 {
+  position: relative;
 }
 
-table {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%,-50%);
+.container2  {
+  top: 35%;
 }
 
-.red {
-	color: red;
+.hidden {
+  display: none !important;
 }
+

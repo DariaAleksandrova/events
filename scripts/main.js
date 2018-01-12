@@ -1,84 +1,131 @@
 window.addEventListener('click', hideDropdown);
 window.addEventListener('resize', hideDropdown);
 window.onscroll = hideDropdown;
-window.addEventListener('click', selectLabel);
-window.addEventListener('click', openDpList);
-
-
 
 document.addEventListener('DOMContentLoaded', function() {
-    dpList = document.getElementById("dropdownList");
-    input = document.getElementById("myInput");
-    input.onkeydown = filterFunction;
-    oldInputValue = '';
-    // открытие списка при нажатии на поле
-    addLabels();
-    dpLabel = dpList.getElementsByTagName("label");
+    initDropdown(document.getElementsByClassName('container'),jsonData);
+    initDropdown(document.getElementsByClassName('container2'),jsonData);
+
+    var dropdownLabels = document.querySelectorAll('.dropdownList label');
+    dropdownLabels.forEach(function (dropdownLabel) {
+        dropdownLabel.addEventListener('click', selectLabel);
+    });
+
+    var dropdownLists = document.querySelectorAll('.dropdownList');
+    dropdownLists.forEach(function (dropdownList) {
+        dropdownList.addEventListener('click', hideDropdown);
+    });
+
+    var inputs = document.querySelectorAll('.myInput');
+    inputs.forEach(function (input) {
+        input.addEventListener('click', openDropdownList);
+        input.onkeyup = filter;
+    });
 });
 
-// открытие списка вверх
-function openDpList(e) {
-    if(e.target.matches('#myInput, .dropdownArrow')) {
-        input.focus();
-        if(!dpList.classList.contains('show')) {
-            for (i = 0; i < dpLabel.length; i++) {
-                dpLabel[i].style.display = "";
-            }
-            oldInputValue = input.value;
-            var h = dpList.offsetHeight;
-            var wh = window.innerHeight;
-            var pos = getCoords(input);
-            var scroll = getDocumentScroll();
-            if (wh - pos.top + scroll.top < h + input.offsetHeight) {
-                dpList.classList.add('openTop')
-            } else {
-                dpList.classList.remove('openTop');
-            }
-            dpList.classList.add("show");
-            input.value = "";
-        }
+//инициализация
+function initDropdown(container, data) {
+    var html = '<div class="dropdown"><div class="dropdown-content"><span class="dropdownArrow"></span><input type="text" placeholder="Поиск..." data-value="" class="myInput" /><div class="dropdownList"></div></div></div>';
+    container[0].innerHTML = html;
+    addLabels(container[0],data);
+}
+
+//добавление элементов в список
+function addLabels(container, data) {
+    var items = JSON.parse(data);
+    var newElement;
+    items.forEach(function (item) {
+        newElement = document.createElement('label');
+        newElement.id = item.id;
+        newElement.innerText = item.label;
+        container.getElementsByClassName('dropdownList')[0].append(newElement);
+    });
+}
+
+
+//открытие списка
+function openDropdownList(e) {
+    var input = e.currentTarget;
+    var dropdownList = input.nextSibling;
+
+    e.currentTarget.focus();
+    if(!dropdownList.classList.contains('showed')) {
+        showItems(dropdownList.childNodes);
+        input.attributes["data-value"].value = input.value;
+        updownOpen(input, dropdownList);
     }
 }
 
-//фильтр
-function filterFunction() {
-    var filter, i;
-    filter = input.value.toUpperCase();
-    for (i = 0; i < dpLabel.length; i++) {
-        if (dpLabel[i].innerHTML.toUpperCase().indexOf(filter) > -1) {
-            dpLabel[i].style.display = "";
-        } else {
-            dpLabel[i].style.display = "none";
-        }
+//показать элементы
+function showItems(items) {
+    items.forEach(function (item) {
+        item.classList.remove('hidden');
+    });
+}
+
+//скрыть элемент
+function hideItem(item) {
+    item.classList.add('hidden');
+}
+
+//показать элемент
+function showItem(item) {
+    item.classList.remove('hidden');
+}
+
+//открытие списка вверх или вниз
+function updownOpen(input, dropdownList) {
+    var offsetHeight = dropdownList.offsetHeight;
+    var windowHeight = window.innerHeight;
+    var position = getCoords(input);
+    var scroll = getDocumentScroll();
+    if (windowHeight - position.top + scroll.top < offsetHeight + input.offsetHeight) {
+        dropdownList.classList.add('openedTop')
+    } else {
+        dropdownList.classList.remove('openedTop');
     }
+    dropdownList.classList.add("showed");
+    input.value = "";
+}
+
+//фильтр
+function filter(e) {
+    var input = e.currentTarget;
+    const filterValue = input.value.toUpperCase();
+    var dropdownLabels = input.nextElementSibling.childNodes;
+
+    dropdownLabels.forEach(function (dropdownLabel) {
+        if (dropdownLabel.innerHTML.toUpperCase().indexOf(filterValue) === 0) {
+            showItem(dropdownLabel);
+        } else {
+            hideItem(dropdownLabel);
+        }
+    });
 }
 
 //закрытие списка при нажатии на область вне элемента
 function hideDropdown(e) {
-    if(e.type == 'scroll' || e.type == 'resize' || !e.target.matches('#dropdownList, #myInput')) {
-        dpList.classList.remove("show");
-        input.value = oldInputValue;
+    if(e.type === 'scroll' || e.type === 'resize' || !e.target.matches('.dropdownList, .myInput')) {
+        var dropdownLists = document.querySelectorAll('.dropdownList');
+        dropdownLists.forEach(function (dropdownList) {
+            if(dropdownList.classList.contains('showed')) {
+                var input = dropdownList.previousSibling;
+                input.value = input.attributes["data-value"].value;
+            }
+            dropdownList.classList.remove("showed");
+        });
     }
 }
 
-function addLabels() {
-    var lbls = '';
-    var l = JSON.parse(labels);
-    for (key in l) {
-      if (l.hasOwnProperty(key)) {
-        lbls += '<label id="' + key + '">' + l[key].label + '</label>';
-      }
-    }
-    dpList.innerHTML = lbls;
-}
-
+//выбор элемента в списке
 function selectLabel(e) {
-    if(e.target.matches('#dropdownList label')) {
-        input.value = e.target.textContent;
-        oldInputValue = input.value;
-    }
+    var label = e.currentTarget;
+    var input = label.parentElement.previousSibling;
+    input.value = label.textContent;
+    input.attributes["data-value"].value = input.value;
 }
 
+//получение данных о скроле
 function getDocumentScroll() {
     var scrollHeight = Math.max(
         document.body.scrollHeight, document.documentElement.scrollHeight,
@@ -93,6 +140,7 @@ function getDocumentScroll() {
     };
 }
 
+//получение координат элемента
 function getCoords(elem) {
     var box = elem.getBoundingClientRect();
 
