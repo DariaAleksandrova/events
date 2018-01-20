@@ -1,10 +1,8 @@
-window.addEventListener('click', hideDropdown);
-window.addEventListener('resize', hideDropdown);
-window.onscroll = hideDropdown;
-
-document.addEventListener('DOMContentLoaded', function() {
-    initDropdown(document.getElementsByClassName('container'),jsonData);
-    initDropdown(document.getElementsByClassName('container2'),jsonData);
+//инициализация
+function initDropdown(container, data) {
+    var html = '<div class="dropdown"><div class="dropdown-content"><span class="dropdownArrow"></span><input type="text" placeholder="Поиск..." data-value="" class="myInput" /><div class="dropdownList"></div></div></div>';
+    container[0].innerHTML = html;
+    addLabels(container[0],data);
 
     var dropdownLabels = document.querySelectorAll('.dropdownList label');
     dropdownLabels.forEach(function (dropdownLabel) {
@@ -13,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var dropdownLists = document.querySelectorAll('.dropdownList');
     dropdownLists.forEach(function (dropdownList) {
-        dropdownList.addEventListener('click', hideDropdown);
+        dropdownList.addEventListener('click', hideDropdownClick);
     });
 
     var inputs = document.querySelectorAll('.myInput');
@@ -21,13 +19,15 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('click', openDropdownList);
         input.onkeyup = filter;
     });
-});
 
-//инициализация
-function initDropdown(container, data) {
-    var html = '<div class="dropdown"><div class="dropdown-content"><span class="dropdownArrow"></span><input type="text" placeholder="Поиск..." data-value="" class="myInput" /><div class="dropdownList"></div></div></div>';
-    container[0].innerHTML = html;
-    addLabels(container[0],data);
+    var inputArrows =  document.querySelectorAll('.dropdownArrow');
+    inputArrows.forEach(function (inputArrow) {
+        inputArrow.addEventListener('click', openDropdownList);
+    });
+
+    document.body.addEventListener('click', hideDropdownClick);
+    window.addEventListener('resize', hideDropdownScrollAndResize);
+    window.addEventListener('scroll', hideDropdownScrollAndResize);
 }
 
 //добавление элементов в список
@@ -42,13 +42,16 @@ function addLabels(container, data) {
     });
 }
 
-
 //открытие списка
 function openDropdownList(e) {
-    var input = e.currentTarget;
+    if(e.currentTarget.className === 'myInput') {
+        var input = e.currentTarget;
+    } else {
+        var input = e.target.nextSibling;
+    }
     var dropdownList = input.nextSibling;
 
-    e.currentTarget.focus();
+    input.focus();
     if(!dropdownList.classList.contains('showed')) {
         showItems(dropdownList.childNodes);
         input.attributes["data-value"].value = input.value;
@@ -104,17 +107,36 @@ function filter(e) {
 }
 
 //закрытие списка при нажатии на область вне элемента
+function hideDropdownClick(e) {
+    if(!e.target.matches('.dropdownList, .myInput, .dropdownArrow')) {
+        hideDropdown(e);
+    }
+}
+
 function hideDropdown(e) {
-    if(e.type === 'scroll' || e.type === 'resize' || !e.target.matches('.dropdownList, .myInput')) {
-        var dropdownLists = document.querySelectorAll('.dropdownList');
-        dropdownLists.forEach(function (dropdownList) {
+    if(e) {
+        if (e.target.tagName.toLowerCase() === 'label') {
+            var dropdownList = e.target.parentElement;
             if(dropdownList.classList.contains('showed')) {
                 var input = dropdownList.previousSibling;
                 input.value = input.attributes["data-value"].value;
             }
             dropdownList.classList.remove("showed");
-        });
+        } else {
+            var dropdownLists = document.querySelectorAll('.dropdownList');
+            dropdownLists.forEach(function (dropdownList) {
+                if(dropdownList.classList.contains('showed')) {
+                    var input = dropdownList.previousSibling;
+                    input.value = input.attributes["data-value"].value;
+                }
+                dropdownList.classList.remove("showed");
+            });
+        }
     }
+}
+
+function hideDropdownScrollAndResize() {
+    hideDropdown();
 }
 
 //выбор элемента в списке
@@ -148,5 +170,9 @@ function getCoords(elem) {
         top: box.top + pageYOffset,
         left: box.left + pageXOffset
     };
-
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    initDropdown(document.getElementsByClassName('container'),jsonData);
+    initDropdown(document.getElementsByClassName('container2'),jsonData);
+});
