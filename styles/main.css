@@ -74,8 +74,8 @@ html, body {
   border: 1px solid rgba(0,0,0,0.2);
 }
 
-.dropdownList.showed,
-.showed {
+.dropdownList.visible,
+.visible {
   position: relative;
   left: 0;
   opacity: 1;

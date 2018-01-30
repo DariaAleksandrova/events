@@ -1,186 +1,162 @@
 //инициализация
-function initDropdown(container, data) {
-    var html = '<div class="dropdown"><div class="dropdown-content"><span class="dropdownArrow"></span><input type="text" placeholder="Поиск..." data-value="" class="myInput" /><div class="dropdownList"></div></div></div>';
-    container[0].innerHTML = html;
-    addLabels(container[0],data);
+function initDropdown(containers, data) {
+    let oldValue = "";
 
-    var dropdownLabels = document.querySelectorAll('.dropdownList label');
-    dropdownLabels.forEach(function (dropdownLabel) {
-        dropdownLabel.addEventListener('click', selectLabel);
-    });
+    [].forEach.call(containers, function (container) {
+        const dropdown = document.createElement('div');
+        dropdown.classList.add('dropdown');
 
-    var dropdownLists = document.querySelectorAll('.dropdownList');
-    dropdownLists.forEach(function (dropdownList) {
+        const dropdownContent = document.createElement('div');
+        dropdownContent.classList.add('dropdown-content');
+
+        const dropdownArrow = document.createElement('span');
+        dropdownArrow.classList.add('dropdownArrow');
+
+        const dropdownInput = document.createElement('input');
+        dropdownInput.type = 'text';
+        dropdownInput.classList.add('myInput');
+
+        const dropdownList = document.createElement('div');
+        dropdownList.classList.add('dropdownList');
+
+        container.appendChild(dropdown);
+
+        dropdown.appendChild(dropdownContent);
+        dropdownContent.appendChild(dropdownArrow);
+        dropdownContent.appendChild(dropdownInput);
+        dropdownContent.appendChild(dropdownList);
+
+        addLabels(dropdownList,data);
+
+        const dropdownLabels = dropdownContent.querySelectorAll('.dropdownList label');
+        dropdownLabels.forEach(function (dropdownLabel) {
+            dropdownLabel.addEventListener('click', selectLabel);
+        });
+
         dropdownList.addEventListener('click', hideDropdownClick);
-    });
+        dropdownArrow.addEventListener('click', openDropdownList);
+        dropdownInput.addEventListener('click', openDropdownList);
+        dropdownInput.onkeyup = filter;
 
-    var inputs = document.querySelectorAll('.myInput');
-    inputs.forEach(function (input) {
-        input.addEventListener('click', openDropdownList);
-        input.onkeyup = filter;
-    });
+        document.body.addEventListener('click', hideDropdownClick);
+        window.addEventListener('resize', hideDropdown);
+        window.addEventListener('scroll', hideDropdown);
 
-    var inputArrows =  document.querySelectorAll('.dropdownArrow');
-    inputArrows.forEach(function (inputArrow) {
-        inputArrow.addEventListener('click', openDropdownList);
-    });
-
-    document.body.addEventListener('click', hideDropdownClick);
-    window.addEventListener('resize', hideDropdownScrollAndResize);
-    window.addEventListener('scroll', hideDropdownScrollAndResize);
-}
-
-//добавление элементов в список
-function addLabels(container, data) {
-    var items = JSON.parse(data);
-    var newElement;
-    items.forEach(function (item) {
-        newElement = document.createElement('label');
-        newElement.id = item.id;
-        newElement.innerText = item.label;
-        container.getElementsByClassName('dropdownList')[0].append(newElement);
-    });
-}
-
-//открытие списка
-function openDropdownList(e) {
-    if(e.currentTarget.className === 'myInput') {
-        var input = e.currentTarget;
-    } else {
-        var input = e.target.nextSibling;
-    }
-    var dropdownList = input.nextSibling;
-
-    input.focus();
-    if(!dropdownList.classList.contains('showed')) {
-        showItems(dropdownList.childNodes);
-        input.attributes["data-value"].value = input.value;
-        updownOpen(input, dropdownList);
-    }
-}
-
-//показать элементы
-function showItems(items) {
-    items.forEach(function (item) {
-        item.classList.remove('hidden');
-    });
-}
-
-//скрыть элемент
-function hideItem(item) {
-    item.classList.add('hidden');
-}
-
-//показать элемент
-function showItem(item) {
-    item.classList.remove('hidden');
-}
-
-//открытие списка вверх или вниз
-function updownOpen(input, dropdownList) {
-    var offsetHeight = dropdownList.offsetHeight;
-    var windowHeight = window.innerHeight;
-    var position = getCoords(input);
-    var scroll = getDocumentScroll();
-    if (windowHeight - position.top + scroll.top < offsetHeight + input.offsetHeight) {
-        dropdownList.classList.add('openedTop')
-    } else {
-        dropdownList.classList.remove('openedTop');
-    }
-    dropdownList.classList.add("showed");
-    input.value = "";
-}
-
-//фильтр
-function filter(e) {
-    var input = e.currentTarget;
-    const filterValue = input.value.toUpperCase();
-    var dropdownLabels = input.nextElementSibling.childNodes;
-
-    dropdownLabels.forEach(function (dropdownLabel) {
-        if (dropdownLabel.innerHTML.toUpperCase().indexOf(filterValue) === 0) {
-            showItem(dropdownLabel);
-        } else {
-            hideItem(dropdownLabel);
+        //добавление элементов в список
+        function addLabels(container, data) {
+            let items = JSON.parse(data);
+            let newElement;
+            items.forEach(function (item) {
+                newElement = document.createElement('label');
+                newElement.id = item.id;
+                newElement.innerText = item.label;
+                container.append(newElement);
+            });
         }
-    });
-}
 
-//закрытие списка при нажатии на область вне элемента
-function hideDropdownClick(e) {
-    if(!e.target.matches('.dropdownList, .myInput, .dropdownArrow')) {
-        hideDropdown(e);
-    }
-}
-
-//скрываем дропдаун лист
-function hideDropdown(e) {
-    if (e) {
-        if (e.target.tagName.toLowerCase() === 'label') {
-            var dropdownList = e.target.parentElement;
-            if (dropdownList.classList.contains('showed')) {
-                var input = dropdownList.previousSibling;
-                input.value = input.attributes["data-value"].value;
+        //открытие списка
+        function openDropdownList() {
+            dropdownInput.focus();
+            if(!isVisible()) {
+                showItems(dropdownList.childNodes);
+                oldValue = dropdownInput.value;
+                updownOpen(dropdownInput, dropdownList);
             }
-            dropdownList.classList.remove("showed");
-        } else {
-            showDropdownLists(document.querySelectorAll('.dropdownList'));
         }
-    } else {
-        showDropdownLists(document.querySelectorAll('.dropdownList'));
-    }
-}
 
-//обработчик скрытия всех дропдаунов на странице
-function showDropdownLists(dropdownLists) {
-    dropdownLists.forEach(function (dropdownList) {
-        if (dropdownList.classList.contains('showed')) {
-            var input = dropdownList.previousSibling;
-            input.value = input.attributes["data-value"].value;
+        //показать элементы
+        function showItems(items) {
+            items.forEach(function (item) {
+                item.classList.remove('hidden');
+            });
         }
-        dropdownList.classList.remove("showed");
+
+        //скрыть элемент
+        function hideItem(item) {
+            item.classList.add('hidden');
+        }
+
+        //показать элемент
+        function showItem(item) {
+            item.classList.remove('hidden');
+        }
+
+        //открытие списка вверх или вниз
+        function updownOpen(input, dropdownList) {
+            let offsetHeight = dropdownList.offsetHeight;
+            let windowHeight = window.innerHeight;
+            let position = getCoords(input);
+            let scroll = getDocumentScroll();
+            if (windowHeight - position.top + scroll.top < offsetHeight + input.offsetHeight) {
+                dropdownList.classList.add('openedTop')
+            } else {
+                dropdownList.classList.remove('openedTop');
+            }
+            dropdownList.classList.add("visible");
+            dropdownInput.value = "";
+        }
+
+        //фильтр
+        function filter() {
+            const filterValue = dropdownInput.value.toUpperCase();
+            dropdownLabels.forEach(function (dropdownLabel) {
+                if (dropdownLabel.innerHTML.toUpperCase().indexOf(filterValue) === 0) {
+                    showItem(dropdownLabel);
+                } else {
+                    hideItem(dropdownLabel);
+                }
+            });
+        }
+
+        //закрытие списка при нажатии на область вне элемента
+        function hideDropdownClick(e) {
+            let target = e.target;
+            if(target !== dropdownInput && target !== dropdownList && target !== dropdownArrow) {
+                hideDropdown(e);
+            }
+        }
+
+        //скрываем дропдаун лист
+        function hideDropdown() {
+            if (isVisible()) {
+                dropdownInput.value = oldValue;
+            }
+            dropdownList.classList.remove("visible");
+        }
+
+        //выбор элемента в списке
+        function selectLabel(e) {
+            let label = e.currentTarget;
+            dropdownInput.value = label.textContent;
+            oldValue = dropdownInput.value;
+        }
+
+        //получение данных о скроле
+        function getDocumentScroll() {
+            let scrollHeight = Math.max(
+                document.body.scrollHeight, document.documentElement.scrollHeight,
+                document.body.offsetHeight, document.documentElement.offsetHeight,
+                document.body.clientHeight, document.documentElement.clientHeight
+            );
+            return {
+                top: pageYOffset,
+                bottom: pageYOffset + document.documentElement.clientHeight,
+                height: scrollHeight
+            };
+        }
+
+        //получение координат элемента
+        function getCoords(elem) {
+            let box = elem.getBoundingClientRect();
+            return {
+                top: box.top + pageYOffset,
+                left: box.left + pageXOffset
+            };
+        }
+        function isVisible() {
+            return dropdownList.classList.contains('visible');
+        }
     });
-}
-
-
-//скрываем дробдаун на скол и ресайз
-function hideDropdownScrollAndResize() {
-    hideDropdown();
-}
-
-
-
-//выбор элемента в списке
-function selectLabel(e) {
-    var label = e.currentTarget;
-    var input = label.parentElement.previousSibling;
-    input.value = label.textContent;
-    input.attributes["data-value"].value = input.value;
-}
-
-//получение данных о скроле
-function getDocumentScroll() {
-    var scrollHeight = Math.max(
-        document.body.scrollHeight, document.documentElement.scrollHeight,
-        document.body.offsetHeight, document.documentElement.offsetHeight,
-        document.body.clientHeight, document.documentElement.clientHeight
-    );
-
-    return {
-        top: pageYOffset,
-        bottom: pageYOffset + document.documentElement.clientHeight,
-        height: scrollHeight
-    };
-}
-
-//получение координат элемента
-function getCoords(elem) {
-    var box = elem.getBoundingClientRect();
-
-    return {
-        top: box.top + pageYOffset,
-        left: box.left + pageXOffset
-    };
 }
 
 document.addEventListener('DOMContentLoaded', function() {
